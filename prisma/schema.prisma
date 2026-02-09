@@ -1,0 +1,53 @@
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Model for storing short links
+model Link {
+  id        Int      @id @default(autoincrement())
+  shortCode String   @unique @db.VarChar(10)
+  url       String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relation to clicks
+  clicks    Click[]
+  
+  @@index([shortCode])
+}
+
+// Model for storing click analytics
+model Click {
+  id        Int      @id @default(autoincrement())
+  shortCode String   @db.VarChar(10)
+  clickedAt DateTime @default(now())
+  
+  // Geographic data
+  country   String?  @db.VarChar(2)   // ISO country code (US, IN, etc.)
+  city      String?  @db.VarChar(100)
+  
+  // Device/Browser data
+  device    String?  @db.VarChar(50)  // Mobile, Desktop, Tablet
+  browser   String?  @db.VarChar(50)  // Chrome, Safari, Firefox
+  os        String?  @db.VarChar(50)  // Windows, macOS, iOS, Android
+  
+  // Traffic source
+  referrer  String?  @db.Text
+  
+  // Privacy: Store hashed IP, not raw IP
+  ipHash    String?  @db.VarChar(64)
+  
+  // Relation to link
+  link      Link     @relation(fields: [shortCode], references: [shortCode], onDelete: Cascade)
+  
+  // Index for fast queries by shortCode and time
+  @@index([shortCode, clickedAt(sort: Desc)])
+  @@index([clickedAt])
+}
+
