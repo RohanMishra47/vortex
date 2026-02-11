@@ -8,7 +8,6 @@ datasource db {
   provider = "postgresql"
 }
 
-// Model for storing short links
 model Link {
   id        Int      @id @default(autoincrement())
   shortCode String   @unique @db.VarChar(10)
@@ -16,19 +15,16 @@ model Link {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
-  // Relation to clicks
   clicks    Click[]
   
   @@index([shortCode])
 }
 
-// Model for storing click analytics
 model Click {
   id        Int      @id @default(autoincrement())
   shortCode String   @db.VarChar(10)
   clickedAt DateTime @default(now())
   
-  // Geographic data
   country   String?  @db.VarChar(2)   // ISO country code (US, IN, etc.)
   city      String?  @db.VarChar(100)
   
@@ -46,7 +42,6 @@ model Click {
   // Relation to link
   link      Link     @relation(fields: [shortCode], references: [shortCode], onDelete: Cascade)
   
-  // Index for fast queries by shortCode and time
   @@index([shortCode, clickedAt(sort: Desc)])
   @@index([clickedAt])
 }
