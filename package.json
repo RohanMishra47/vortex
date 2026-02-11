@@ -10,7 +10,8 @@
     "prisma:generate": "dotenv -e .env.local -- pnpm prisma generate",
     "prisma:pull": "dotenv -e .env.local -- pnpm prisma db pull",
     "prisma:migrate": "dotenv -e .env.local -- pnpm prisma migrate dev",
-    "prisma:migrate-deploy": "dotenv -e .env.local -- pnpm prisma migrate deploy"
+    "prisma:migrate-deploy": "dotenv -e .env.local -- pnpm prisma migrate deploy",
+    "prisma:studio": "dotenv -e .env.local -- pnpm prisma studio"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.3.0",
@@ -37,6 +38,7 @@
     "eslint-config-next": "16.1.6",
     "prisma": "^7.3.0",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }
