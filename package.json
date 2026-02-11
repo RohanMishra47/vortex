@@ -11,7 +11,8 @@
     "prisma:pull": "dotenv -e .env.local -- pnpm prisma db pull",
     "prisma:migrate": "dotenv -e .env.local -- pnpm prisma migrate dev",
     "prisma:migrate-deploy": "dotenv -e .env.local -- pnpm prisma migrate deploy",
-    "prisma:studio": "dotenv -e .env.local -- pnpm prisma studio"
+    "prisma:studio": "dotenv -e .env.local -- pnpm prisma studio",
+    "typerun": "pnpm exec tsx --env-file=.env.local"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.3.0",
