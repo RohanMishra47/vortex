@@ -5,19 +5,18 @@ import { NextResponse } from "next/server";
 
 export async function GET(
   request: Request,
-  { params }: { params: { shortCode: string } },
+  { params }: { params: Promise<{ shortCode: string }> },
 ) {
   try {
-    // Validate short code
-    const validation = shortCodeSchema.safeParse(params);
+    const { shortCode } = await params;
+
+    const validation = shortCodeSchema.safeParse({ shortCode });
     if (!validation.success) {
       return NextResponse.json(
         { error: "Invalid short code" },
         { status: 400 },
       );
     }
-
-    const { shortCode } = validation.data;
 
     const link = await prisma.link.findUnique({
       where: { shortCode },
@@ -54,18 +53,18 @@ export async function GET(
 // Deletes a short link + invalidates Redis cache
 export async function DELETE(
   request: Request,
-  { params }: { params: { shortCode: string } },
+  { params }: { params: Promise<{ shortCode: string }> },
 ) {
   try {
-    const validation = shortCodeSchema.safeParse(params);
+    const { shortCode } = await params;
+
+    const validation = shortCodeSchema.safeParse({ shortCode });
     if (!validation.success) {
       return NextResponse.json(
         { error: "Invalid short code" },
         { status: 400 },
       );
     }
-
-    const { shortCode } = validation.data;
 
     // Check if link exists before deleting
     const existing = await prisma.link.findUnique({
