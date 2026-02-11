@@ -1,5 +1,5 @@
-import { prisma } from "./clients/prismaClient";
-import { redis } from "./clients/redisClient";
+import { prisma } from "./utils/prismaClient";
+import { redis } from "./utils/redisClient";
 
 async function testConnections() {
   console.log("🔍 Testing database connection...");
