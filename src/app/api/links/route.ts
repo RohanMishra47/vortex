@@ -52,7 +52,7 @@ export async function POST(request: Request) {
 
           if (target?.includes("shortCode")) {
             console.error(`🚨 Short code collision on ${shortCode}`);
-            const newShortCode = await generateShortCode(); // Retry shortCode generation
+            const newShortCode = generateShortCode(); // Retry shortCode generation
             const link = await prisma.link.create({
               data: { shortCode: newShortCode, url },
             });
