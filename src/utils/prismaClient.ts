@@ -22,4 +22,14 @@ export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
+
+  // 🔥 Prewarm the connection immediately when the server starts
+  prisma
+    .$connect()
+    .then(() => {
+      console.log("✅ Prisma connected and ready");
+      // Running a dummy query to fully initialize everything
+      return prisma.$queryRaw`SELECT 1`;
+    })
+    .catch(console.error);
 }

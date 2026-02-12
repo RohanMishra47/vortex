@@ -10,6 +10,7 @@ import { NextResponse } from "next/server";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+
     const validation = createLinkSchema.safeParse(body);
 
     if (!validation.success) {
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
     }
 
     const { url } = validation.data;
-    const shortCode = await generateShortCode();
+    const shortCode = generateShortCode();
 
     try {
       const link = await prisma.link.create({
@@ -43,23 +44,49 @@ export async function POST(request: Request) {
       );
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        // Unique constraint failed (URL already exists)
+        // Handle unique constraint violations
         if (error.code === "P2002") {
-          const existingLink = await prisma.link.findUnique({
-            where: { url },
-          });
+          const target = error.meta?.target;
 
-          if (existingLink) {
+          if (!Array.isArray(target)) throw error;
+
+          if (target?.includes("shortCode")) {
+            console.error(`🚨 Short code collision on ${shortCode}`);
+            const newShortCode = await generateShortCode(); // Retry shortCode generation
+            const link = await prisma.link.create({
+              data: { shortCode: newShortCode, url },
+            });
+            await cacheLink(newShortCode, url);
+
             return NextResponse.json(
               {
-                shortCode: existingLink.shortCode,
-                shortUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${existingLink.shortCode}`,
-                url: existingLink.url,
-                createdAt: existingLink.createdAt,
-                message: "Short link already exists for this URL",
+                shortCode: link.shortCode,
+                shortUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${link.shortCode}`,
+                url: link.url,
+                createdAt: link.createdAt,
               },
-              { status: 200 },
+              { status: 201 },
             );
+          }
+
+          // If the URL already exists, return the existing short link
+          if (target?.includes("url")) {
+            const existingLink = await prisma.link.findUnique({
+              where: { url },
+            });
+
+            if (existingLink) {
+              return NextResponse.json(
+                {
+                  shortCode: existingLink.shortCode,
+                  shortUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${existingLink.shortCode}`,
+                  url: existingLink.url,
+                  createdAt: existingLink.createdAt,
+                  message: "Short link already exists for this URL",
+                },
+                { status: 200 },
+              );
+            }
           }
         }
       }
