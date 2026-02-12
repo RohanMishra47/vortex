@@ -1,3 +1,4 @@
+import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/utils/prismaClient";
 import { cacheLink } from "@/utils/redisClient";
 import { generateShortCode } from "@/utils/shortCodeID";
@@ -9,9 +10,8 @@ import { NextResponse } from "next/server";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-
-    // Validate input with Zod
     const validation = createLinkSchema.safeParse(body);
+
     if (!validation.success) {
       return NextResponse.json(
         {
@@ -23,46 +23,49 @@ export async function POST(request: Request) {
     }
 
     const { url } = validation.data;
-
-    // Check if this exact URL already exists
-    const existingLink = await prisma.link.findFirst({
-      where: { url },
-    });
-
-    if (existingLink) {
-      return NextResponse.json(
-        {
-          shortCode: existingLink.shortCode,
-          shortUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${existingLink.shortCode}`,
-          url: existingLink.url,
-          createdAt: existingLink.createdAt,
-          message: "Short link already exists for this URL",
-        },
-        { status: 200 },
-      );
-    }
-
     const shortCode = await generateShortCode();
 
-    const link = await prisma.link.create({
-      data: {
-        shortCode,
-        url,
-      },
-    });
+    try {
+      const link = await prisma.link.create({
+        data: { shortCode, url },
+      });
 
-    // 6. Cache in Redis (so edge function can redirect instantly)
-    cacheLink(shortCode, url);
+      await cacheLink(shortCode, url);
 
-    return NextResponse.json(
-      {
-        shortCode: link.shortCode,
-        shortUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${link.shortCode}`,
-        url: link.url,
-        createdAt: link.createdAt,
-      },
-      { status: 201 },
-    );
+      return NextResponse.json(
+        {
+          shortCode: link.shortCode,
+          shortUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${link.shortCode}`,
+          url: link.url,
+          createdAt: link.createdAt,
+        },
+        { status: 201 },
+      );
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        // Unique constraint failed (URL already exists)
+        if (error.code === "P2002") {
+          const existingLink = await prisma.link.findUnique({
+            where: { url },
+          });
+
+          if (existingLink) {
+            return NextResponse.json(
+              {
+                shortCode: existingLink.shortCode,
+                shortUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${existingLink.shortCode}`,
+                url: existingLink.url,
+                createdAt: existingLink.createdAt,
+                message: "Short link already exists for this URL",
+              },
+              { status: 200 },
+            );
+          }
+        }
+      }
+
+      throw error;
+    }
   } catch (error) {
     console.error("[POST /api/links] Error:", error);
     return NextResponse.json(
