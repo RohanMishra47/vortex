@@ -7,7 +7,19 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Vortex - Lightning Fast URL Shortener",
   description:
-    "Geographically distributed URL shortener with real-time analytics",
+    "Geographically distributed URL shortener with sub-50ms redirection and real-time analytics. Built with Next.js, Edge Functions, and Redis.",
+  keywords: [
+    "url shortener",
+    "edge computing",
+    "fast redirect",
+    "link management",
+  ],
+  authors: [{ name: "Rohan Mishra" }],
+  openGraph: {
+    title: "Vortex - Lightning Fast URL Shortener",
+    description: "Sub-50ms URL redirection powered by edge computing",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
