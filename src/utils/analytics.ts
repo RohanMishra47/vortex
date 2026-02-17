@@ -1,4 +1,3 @@
-import crypto from "crypto";
 import { headers } from "next/headers";
 
 // Interface for click analytics data
@@ -12,6 +11,14 @@ export interface ClickData {
   os?: string;
   referrer?: string;
   ipHash?: string;
+}
+
+async function hashIp(ip: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(ip);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 // Extracts analytics data from the request
@@ -39,10 +46,7 @@ export async function extractAnalytics(
     "unknown";
 
   // Hash IP for privacy
-  const ipHash =
-    ip !== "unknown"
-      ? crypto.createHash("sha256").update(ip).digest("hex")
-      : undefined;
+  const ipHash = ip !== "unknown" ? await hashIp(ip) : undefined;
 
   // Extract geographic data from Vercel/Cloudflare headers
   const country =
