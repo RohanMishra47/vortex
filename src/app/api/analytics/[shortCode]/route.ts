@@ -13,9 +13,9 @@ const THIRTY_DAYS_AGO = () => {
 // ─────────────────────────────────────────────────────────────
 export async function GET(
   _request: Request,
-  { params }: { params: { shortCode: string } },
+  { params }: { params: Promise<{ shortCode: string }> },
 ) {
-  const { shortCode } = params;
+  const { shortCode } = await params;
 
   try {
     // Fetch link + total clicks together
@@ -37,12 +37,12 @@ export async function GET(
       topReferrers,
     ] = await Promise.all([
       prisma.$queryRaw<Array<{ date: string; clicks: number }>>`
-          SELECT DATE(clicked_at) as date, COUNT(*)::int as clicks
-          FROM "Click"
-          WHERE short_code = ${shortCode}
-            AND clicked_at >= ${THIRTY_DAYS_AGO()}
-          GROUP BY DATE(clicked_at)
-          ORDER BY date ASC`,
+        SELECT DATE("clickedAt") as date, COUNT(*)::int as clicks
+        FROM "Click"
+        WHERE "shortCode" = ${shortCode}
+          AND "clickedAt" >= ${THIRTY_DAYS_AGO()}
+        GROUP BY DATE("clickedAt")
+        ORDER BY date ASC`,
 
       prisma.click.groupBy({
         by: ["country"],

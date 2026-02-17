@@ -52,11 +52,13 @@ export async function extractAnalytics(
   const country =
     headersList.get("x-vercel-ip-country") ||
     request.headers.get("cf-ipcountry") ||
+    process.env.DEV_COUNTRY ||
     undefined;
 
   const city =
     headersList.get("x-vercel-ip-city") ||
     request.headers.get("cf-ipcity") ||
+    process.env.DEV_CITY ||
     undefined;
 
   // Parse device type from User-Agent
