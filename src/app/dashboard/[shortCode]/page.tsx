@@ -3,11 +3,11 @@
 import { ArrowLeft, Globe, Monitor, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { use } from "react";
+import type { PieLabelRenderProps } from "recharts";
 import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
   Line,
   LineChart,
   Pie,
@@ -23,6 +23,35 @@ import StatCard from "../components/StatCard";
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 const COLORS = ["#8b5cf6", "#ec4899", "#06b6d4", "#10b981", "#f59e0b"];
+
+// --- Interfaces ---
+
+interface CountryStat {
+  country: string;
+  clicks: number;
+}
+
+interface DeviceStat {
+  device: string;
+  clicks: number;
+  fill?: string; // For pie chart coloring
+}
+
+interface ReferrerStat {
+  referrer: string;
+  clicks: number;
+}
+
+// --- Pie Chart Label Renderer ---
+
+const renderDeviceLabel = ({
+  device,
+  clicks,
+}: PieLabelRenderProps & { device?: string; clicks?: number }): string => {
+  const deviceName = device ?? "";
+  const clickCount = clicks ?? 0;
+  return `${deviceName}: ${clickCount}`;
+};
 
 export default function AnalyticsPage({
   params,
@@ -59,6 +88,14 @@ export default function AnalyticsPage({
 
   // Calculate unique visitors (approximate based on IP hashes)
   const uniqueVisitors = Math.floor(data.totalClicks * 0.8); // Rough estimate
+
+  // Add fill colors to device stats for the pie chart
+  const devicesWithFill: DeviceStat[] = (analytics.devices as DeviceStat[]).map(
+    (entry, index) => ({
+      ...entry,
+      fill: COLORS[index % COLORS.length],
+    }),
+  );
 
   return (
     <div className="space-y-8">
@@ -158,29 +195,31 @@ export default function AnalyticsPage({
           </h2>
           {analytics.topCountries.length > 0 ? (
             <div className="space-y-4">
-              {analytics.topCountries.slice(0, 5).map((country: any) => (
-                <div
-                  key={country.country}
-                  className="flex items-center justify-between"
-                >
-                  <span className="text-gray-300">
-                    {country.country || "Unknown"}
-                  </span>
-                  <div className="flex items-center gap-3">
-                    <div className="w-32 bg-gray-700 rounded-full h-2">
-                      <div
-                        className="bg-purple-500 h-2 rounded-full"
-                        style={{
-                          width: `${(country.clicks / data.totalClicks) * 100}%`,
-                        }}
-                      ></div>
-                    </div>
-                    <span className="text-white font-medium w-12 text-right">
-                      {country.clicks}
+              {(analytics.topCountries as CountryStat[])
+                .slice(0, 5)
+                .map((country) => (
+                  <div
+                    key={country.country}
+                    className="flex items-center justify-between"
+                  >
+                    <span className="text-gray-300">
+                      {country.country || "Unknown"}
                     </span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-32 bg-gray-700 rounded-full h-2">
+                        <div
+                          className="bg-purple-500 h-2 rounded-full"
+                          style={{
+                            width: `${(country.clicks / data.totalClicks) * 100}%`,
+                          }}
+                        ></div>
+                      </div>
+                      <span className="text-white font-medium w-12 text-right">
+                        {country.clicks}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           ) : (
             <p className="text-gray-400 text-center py-8">
@@ -192,26 +231,18 @@ export default function AnalyticsPage({
         {/* Device Breakdown */}
         <div className="bg-white/10 backdrop-blur-lg rounded-lg border border-white/20 p-6">
           <h2 className="text-xl font-semibold text-white mb-6">Devices</h2>
-          {analytics.devices.length > 0 ? (
+          {devicesWithFill.length > 0 ? (
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie
-                  data={analytics.devices}
+                  data={devicesWithFill}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={(entry) => `${entry.device}: ${entry.clicks}`}
+                  label={renderDeviceLabel}
                   outerRadius={80}
-                  fill="#8884d8"
                   dataKey="clicks"
-                >
-                  {analytics.devices.map((entry: any, index: number) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
-                  ))}
-                </Pie>
+                />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "#1f2937",
@@ -262,9 +293,9 @@ export default function AnalyticsPage({
         <h2 className="text-xl font-semibold text-white mb-6">Top Referrers</h2>
         {analytics.topReferrers.length > 0 ? (
           <div className="space-y-3">
-            {analytics.topReferrers
+            {(analytics.topReferrers as ReferrerStat[])
               .slice(0, 10)
-              .map((ref: any, index: number) => (
+              .map((ref, index) => (
                 <div
                   key={index}
                   className="flex items-center justify-between p-3 bg-white/5 rounded-lg"
