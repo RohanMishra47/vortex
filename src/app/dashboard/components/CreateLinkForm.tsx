@@ -1,8 +1,8 @@
 "use client";
 
-import axios, { AxiosError } from "axios";
-import { Check, Copy, Link as LinkIcon, Loader2 } from "lucide-react";
+import { Link as LinkIcon, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 interface CreateLinkFormProps {
   onLinkCreated: () => void;
@@ -10,41 +10,44 @@ interface CreateLinkFormProps {
 
 export default function CreateLinkForm({ onLinkCreated }: CreateLinkFormProps) {
   const [url, setUrl] = useState("");
-  const [shortenedUrl, setShortenedUrl] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setSuccess(false);
     setLoading(true);
 
     try {
-      const response = await axios.post("/api/links", { url });
-      const data = response.data;
+      const response = await fetch("/api/links", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
 
-      if (!data.shortUrl) {
-        throw new Error("No shortened URL returned");
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to create link");
       }
 
-      setSuccess(true);
+      // Success!
+      toast.success("Link created successfully!", {
+        description: `Short URL: ${data.shortUrl}`,
+        action: {
+          label: "Copy",
+          onClick: () => {
+            navigator.clipboard.writeText(data.shortUrl);
+            toast.success("Copied to clipboard!");
+          },
+        },
+      });
+
       setUrl("");
       onLinkCreated(); // Refresh the links list
-      setShortenedUrl(data.shortUrl);
-
-      setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        const serverError = err as AxiosError<{ error?: string }>;
-        setError(serverError.response?.data?.error || err.message);
-      } else if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Something went wrong");
-      }
+      toast.error("Failed to create link", {
+        description:
+          err instanceof Error ? err.message : "Something went wrong",
+      });
     } finally {
       setLoading(false);
     }
@@ -72,26 +75,15 @@ export default function CreateLinkForm({ onLinkCreated }: CreateLinkFormProps) {
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://example.com/very/long/url"
             required
-            className="w-full px-4 py-3 bg-black/30 border border-white/20 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            disabled={loading}
+            className="w-full px-4 py-3 bg-black/30 border border-white/20 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           />
         </div>
-
-        {error && (
-          <div className="p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-300 text-sm">
-            {error}
-          </div>
-        )}
-
-        {success && (
-          <div className="p-3 bg-green-500/20 border border-green-500/50 rounded-lg text-green-300 text-sm">
-            ✓ Link created successfully!
-          </div>
-        )}
 
         <button
           type="submit"
           disabled={loading || !url}
-          className="w-full px-6 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-600/50 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+          className="w-full px-6 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-600/50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
         >
           {loading ? (
             <>
@@ -105,31 +97,6 @@ export default function CreateLinkForm({ onLinkCreated }: CreateLinkFormProps) {
             </>
           )}
         </button>
-        {shortenedUrl && (
-          <div className="mt-4 flex items-center gap-2">
-            <input
-              type="text"
-              readOnly
-              value={shortenedUrl}
-              className="px-3 py-2 bg-gray-800 text-white rounded-md w-full"
-            />
-            <button
-              onClick={async () => {
-                await navigator.clipboard.writeText(shortenedUrl);
-                setCopied(true);
-                setTimeout(() => setCopied(false), 2000);
-              }}
-              className="p-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-              title="Copy short URL"
-            >
-              {copied ? (
-                <Check className="w-4 h-4" />
-              ) : (
-                <Copy className="w-4 h-4" />
-              )}
-            </button>
-          </div>
-        )}
       </form>
     </div>
   );
