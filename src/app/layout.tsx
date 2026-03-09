@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -20,6 +21,15 @@ export const metadata: Metadata = {
     description: "Sub-50ms URL redirection powered by edge computing",
     type: "website",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Vortex - Lightning Fast URL Shortener",
+    description: "Sub-50ms URL redirection powered by edge computing",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
@@ -33,6 +43,16 @@ export default function RootLayout({
         <div className="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
           {children}
         </div>
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            style: {
+              background: "rgba(17, 24, 39, 0.95)",
+              border: "1px solid rgba(139, 92, 246, 0.3)",
+              color: "#fff",
+            },
+          }}
+        />
       </body>
     </html>
   );
