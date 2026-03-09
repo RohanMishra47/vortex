@@ -1,10 +1,20 @@
 "use client";
 
 import { formatDistanceToNow } from "date-fns";
-import { Check, Copy, ExternalLink, Trash2 } from "lucide-react";
+import {
+  Check,
+  Copy,
+  ExternalLink,
+  Link as LinkIcon,
+  Loader2,
+  Trash2,
+  TrendingUp,
+} from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
+import { toast } from "sonner";
 
-interface Link {
+interface LinkItem {
   id: number;
   shortCode: string;
   shortUrl: string;
@@ -14,7 +24,7 @@ interface Link {
 }
 
 interface LinksListProps {
-  links: Link[];
+  links: LinkItem[];
   onDelete: (shortCode: string) => void;
 }
 
@@ -26,26 +36,29 @@ export default function LinksList({ links, onDelete }: LinksListProps) {
     try {
       await navigator.clipboard.writeText(shortUrl);
       setCopiedCode(shortCode);
+      toast.success("Copied to clipboard!", {
+        description: shortUrl,
+      });
       setTimeout(() => setCopiedCode(null), 2000);
-    } catch (err) {
-      console.error("Failed to copy:", err);
+    } catch {
+      toast.error("Failed to copy", {
+        description: "Please try again",
+      });
     }
   };
 
-  const handleDelete = async (shortCode: string) => {
-    if (
-      !confirm(
-        "Are you sure you want to delete this link? This action cannot be undone.",
-      )
-    ) {
-      return;
-    }
-
+  const handleDelete = async (shortCode: string, url: string) => {
     setDeletingCode(shortCode);
+
     try {
       await onDelete(shortCode);
-    } catch (error) {
-      console.error("Failed to delete:", error);
+      toast.success("Link deleted", {
+        description: `Deleted: ${url.substring(0, 50)}...`,
+      });
+    } catch {
+      toast.error("Failed to delete link", {
+        description: "Please try again",
+      });
     } finally {
       setDeletingCode(null);
     }
@@ -54,7 +67,13 @@ export default function LinksList({ links, onDelete }: LinksListProps) {
   if (links.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-400">No links yet. Create your first one!</p>
+        <div className="mb-4">
+          <LinkIcon className="w-16 h-16 text-gray-600 mx-auto" />
+        </div>
+        <p className="text-gray-400 text-lg mb-2">No links yet</p>
+        <p className="text-gray-500 text-sm">
+          Create your first short link above!
+        </p>
       </div>
     );
   }
@@ -64,16 +83,20 @@ export default function LinksList({ links, onDelete }: LinksListProps) {
       {links.map((link) => (
         <div
           key={link.id}
-          className="bg-white/10 backdrop-blur-lg rounded-lg border border-white/20 p-6 hover:bg-white/12 transition-all"
+          className="bg-white/10 backdrop-blur-lg rounded-lg border border-white/20 p-6 hover:bg-white/12 transition-all group"
         >
           <div className="flex items-start justify-between gap-4">
             {/* Link Info */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-3 mb-2">
-                <code className="text-lg font-mono font-bold text-purple-400">
+              <div className="flex items-center gap-3 mb-2 flex-wrap">
+                <Link
+                  href={`/dashboard/${link.shortCode}`}
+                  className="text-lg font-mono font-bold text-purple-400 hover:text-purple-300 transition-colors"
+                >
                   /{link.shortCode}
-                </code>
-                <span className="px-2 py-1 bg-purple-500/20 text-purple-300 text-xs rounded-full">
+                </Link>
+                <span className="px-2 py-1 bg-purple-500/20 text-purple-300 text-xs rounded-full flex items-center gap-1">
+                  <TrendingUp className="w-3 h-3" />
                   {link.clickCount} {link.clickCount === 1 ? "click" : "clicks"}
                 </span>
               </div>
@@ -82,10 +105,10 @@ export default function LinksList({ links, onDelete }: LinksListProps) {
                 href={link.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-gray-300 hover:text-white flex items-center gap-2 group truncate"
+                className="text-sm text-gray-300 hover:text-white flex items-center gap-2 group/link truncate"
               >
                 <span className="truncate">{link.url}</span>
-                <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                <ExternalLink className="w-3 h-3 opacity-0 group-hover/link:opacity-100 transition-opacity shrink-0" />
               </a>
 
               <p className="text-xs text-gray-500 mt-2">
@@ -98,6 +121,15 @@ export default function LinksList({ links, onDelete }: LinksListProps) {
 
             {/* Actions */}
             <div className="flex items-center gap-2">
+              {/* View Analytics Button */}
+              <Link
+                href={`/dashboard/${link.shortCode}`}
+                className="p-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 hover:text-blue-300 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                title="View analytics"
+              >
+                <TrendingUp className="w-4 h-4" />
+              </Link>
+
               {/* Copy Button */}
               <button
                 onClick={() => copyToClipboard(link.shortUrl, link.shortCode)}
@@ -113,12 +145,16 @@ export default function LinksList({ links, onDelete }: LinksListProps) {
 
               {/* Delete Button */}
               <button
-                onClick={() => handleDelete(link.shortCode)}
+                onClick={() => handleDelete(link.shortCode, link.url)}
                 disabled={deletingCode === link.shortCode}
-                className="p-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 hover:text-red-300 rounded-lg transition-colors disabled:opacity-50"
+                className="p-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 hover:text-red-300 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Delete link"
               >
-                <Trash2 className="w-4 h-4" />
+                {deletingCode === link.shortCode ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Trash2 className="w-4 h-4" />
+                )}
               </button>
             </div>
           </div>
