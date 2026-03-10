@@ -26,6 +26,10 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error("Error boundary caught:", error, errorInfo);
   }
 
+  handleReset = () => {
+    this.setState({ hasError: false, error: undefined });
+  };
+
   render() {
     if (this.state.hasError) {
       return (
@@ -50,7 +54,7 @@ export class ErrorBoundary extends Component<Props, State> {
               </details>
             )}
             <button
-              onClick={() => window.location.reload()}
+              onClick={this.handleReset}
               className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors inline-flex items-center gap-2"
             >
               <RefreshCw className="w-4 h-4" />
