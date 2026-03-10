@@ -1,5 +1,6 @@
 "use client";
 
+import { LinkItem } from "@/app/types/link";
 import { formatDistanceToNow } from "date-fns";
 import {
   Check,
@@ -13,15 +14,6 @@ import {
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
-
-interface LinkItem {
-  id: number;
-  shortCode: string;
-  shortUrl: string;
-  url: string;
-  clickCount: number;
-  createdAt: string;
-}
 
 interface LinksListProps {
   links: LinkItem[];

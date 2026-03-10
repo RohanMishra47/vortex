@@ -10,19 +10,14 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import useSWR from "swr";
+import SearchFilter from "../components/SearchFilter";
 import { SkeletonCard, SkeletonLink } from "../components/Skeleton";
+import { LinkItem } from "../types/link";
 import CreateLinkForm from "./components/CreateLinkForm";
 import LinksList from "./components/LinksList";
 import StatCard from "./components/StatCard";
 
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
-
-// Define the Link type for better type safety
-interface Link {
-  id: string;
-  shortCode: string;
-  clickCount: number;
-}
 
 export default function DashboardPage() {
   const {
@@ -51,7 +46,8 @@ export default function DashboardPage() {
   // Calculate stats
   const totalLinks = links?.length || 0;
   const totalClicks =
-    links?.reduce((sum: number, link: Link) => sum + link.clickCount, 0) || 0;
+    links?.reduce((sum: number, link: LinkItem) => sum + link.clickCount, 0) ||
+    0;
   const avgClicksPerLink =
     totalLinks > 0 ? Math.round(totalClicks / totalLinks) : 0;
 
@@ -130,7 +126,7 @@ export default function DashboardPage() {
       {/* Create Link Form */}
       <CreateLinkForm onLinkCreated={handleLinkCreated} />
 
-      {/* Links List */}
+      {/* Links List with Search & Filter */}
       <div className="bg-white/10 backdrop-blur-lg rounded-lg border border-white/20 p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-white">Your Links</h2>
@@ -145,30 +141,42 @@ export default function DashboardPage() {
             <SkeletonLink />
             <SkeletonLink />
           </div>
-        ) : (
-          <>
-            <LinksList links={links || []} onDelete={handleDelete} />
+        ) : links && links.length > 0 ? (
+          <SearchFilter links={links}>
+            {(filteredLinks) => (
+              <>
+                <LinksList links={filteredLinks} onDelete={handleDelete} />
 
-            {/* View Analytics Links */}
-            {links && links.length > 0 && (
-              <div className="mt-6 p-4 bg-purple-600/20 rounded-lg border border-purple-500/30">
-                <p className="text-sm text-gray-300 mb-2">
-                  💡 Click on any short code to view detailed analytics
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {links.slice(0, 5).map((link: Link) => (
-                    <Link
-                      key={link.id}
-                      href={`/dashboard/${link.shortCode}`}
-                      className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg transition-colors"
-                    >
-                      /{link.shortCode} →
-                    </Link>
-                  ))}
-                </div>
-              </div>
+                {/* View Analytics Hint */}
+                {filteredLinks.length > 0 && (
+                  <div className="mt-6 p-4 bg-purple-600/20 rounded-lg border border-purple-500/30">
+                    <p className="text-sm text-gray-300 mb-2">
+                      💡 Click on any short code to view detailed analytics
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {filteredLinks.slice(0, 5).map((link) => (
+                        <Link
+                          key={link.id}
+                          href={`/dashboard/${link.shortCode}`}
+                          className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg transition-colors"
+                        >
+                          /{link.shortCode} →
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
-          </>
+          </SearchFilter>
+        ) : (
+          <div className="text-center py-12">
+            <LinkIcon className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+            <p className="text-gray-400 text-lg mb-2">No links yet</p>
+            <p className="text-gray-500 text-sm">
+              Create your first short link above!
+            </p>
+          </div>
         )}
       </div>
     </div>

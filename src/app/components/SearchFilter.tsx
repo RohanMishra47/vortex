@@ -2,15 +2,7 @@
 
 import { Search, SortAsc, SortDesc, X } from "lucide-react";
 import { useMemo, useState } from "react";
-
-interface LinkItem {
-  id: number;
-  shortCode: string;
-  shortUrl: string;
-  url: string;
-  clickCount: number;
-  createdAt: string;
-}
+import { LinkItem } from "../types/link";
 
 interface SearchFilterProps {
   links: LinkItem[];
