@@ -16,7 +16,6 @@ export async function publishMessage(url: string, body: ClickData) {
 
   try {
     const response = await client.publishJSON({ url, body });
-    console.log("[QStash] Message published:", response.messageId);
     return response;
   } catch (error) {
     console.error("[QStash] Failed to publish message:", error);

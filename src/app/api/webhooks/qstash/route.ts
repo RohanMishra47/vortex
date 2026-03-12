@@ -23,12 +23,6 @@ async function handler(request: Request) {
   try {
     const analyticsData: ClickData = await request.json();
 
-    console.log("[Analytics Webhook] Received click data:", {
-      shortCode: analyticsData.shortCode,
-      country: analyticsData.country,
-      device: analyticsData.device,
-    });
-
     if (!analyticsData.shortCode || !analyticsData.clickedAt) {
       return NextResponse.json(
         { error: "Missing required fields: shortCode or clickedAt" },
@@ -49,8 +43,6 @@ async function handler(request: Request) {
         ipHash: analyticsData.ipHash,
       },
     });
-
-    console.log("[Analytics Webhook] Click saved to database successfully");
 
     return NextResponse.json(
       { success: true, message: "Analytics processed" },
