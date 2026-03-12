@@ -13,7 +13,8 @@
     "prisma:migrate": "dotenv -e .env.local -- pnpm prisma migrate dev",
     "prisma:migrate-deploy": "dotenv -e .env.local -- pnpm prisma migrate deploy",
     "prisma:studio": "dotenv -e .env.local -- pnpm prisma studio",
-    "typerun": "pnpm exec tsx --env-file=.env.local"
+    "typerun": "pnpm exec tsx --env-file=.env.local",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
